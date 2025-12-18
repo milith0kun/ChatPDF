@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # ======================
+  # FastAPI Backend
+  # ======================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatpdf-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./uploads:/app/uploads
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - chatpdf-network
+    restart: unless-stopped
+
+  # ======================
+  # Celery Worker
+  # ======================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatpdf-worker
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=4
+    volumes:
+      - ./app:/app/app
+      - ./uploads:/app/uploads
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - chatpdf-network
+    restart: unless-stopped
+
+  # ======================
+  # Celery Flower (Monitoring)
+  # ======================
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chatpdf-flower
+    command: celery -A app.workers.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - celery-worker
+    networks:
+      - chatpdf-network
+    restart: unless-stopped
+
+  # ======================
+  # Redis (Session & Queue)
+  # ======================
+  redis:
+    image: redis:7.2-alpine
+    container_name: chatpdf-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - chatpdf-network
+    restart: unless-stopped
+
+  # ======================
+  # Qdrant (Vector Database)
+  # ======================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: chatpdf-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - chatpdf-network
+    restart: unless-stopped
+
+networks:
+  chatpdf-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  qdrant-data:
