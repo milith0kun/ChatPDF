@@ -70,9 +70,9 @@ class Settings(BaseSettings):
     LLM_CONTEXT_WINDOW: int = 100000  # Reserve tokens for context
     
     # ======================
-    # Vision Model - Same model for vision
+    # Vision Model - Using OpenAI for images/tables
     # ======================
-    VISION_MODEL: str = "gpt-4o-mini"  # Same model supports vision
+    VISION_MODEL: str = "gpt-4o-mini"  # OpenAI for image analysis
     
     # ======================
     # CORS Settings

@@ -5,8 +5,9 @@ Handles PDF upload and async processing status
 
 import os
 import uuid
+import threading
 from typing import List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
 from app.models.document import (
     DocumentUploadResponse,
@@ -14,7 +15,7 @@ from app.models.document import (
     ProcessingStatus
 )
 from app.db.redis_client import redis_manager
-from app.workers.tasks import process_document_task
+from app.workers.tasks import process_document_sync
 from app.config import settings
 from app.utils.file_handler import save_uploaded_file, validate_pdf
 
@@ -95,9 +96,7 @@ async def upload_documents(
     session_data["documents"].extend([d["document_id"] for d in uploaded_files])
     await redis_manager.set_session(session_id, session_data)
     
-    # Queue processing tasks for each document using threading (simpler for dev)
-    import threading
-    from app.workers.tasks import process_document_sync
+    # Start processing tasks in background threads
     for doc in uploaded_files:
         thread = threading.Thread(
             target=process_document_sync,

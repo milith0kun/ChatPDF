@@ -242,24 +242,6 @@ body {
     animation: spin 1s linear infinite;
 }
 
-/* References - Old (keep for backwards compat) */
-.references {
-    margin-top: 16px;
-    padding: 12px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-}
-
-.references-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
 /* Collapsible References */
 .references-collapsible {
     margin-top: 12px;

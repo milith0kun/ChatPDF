@@ -1,6 +1,6 @@
 """
-Celery Tasks
-Async tasks for document processing
+Document Processing Tasks
+Handles PDF processing using threading (Celery tasks retained for future scaling)
 """
 
 import asyncio
