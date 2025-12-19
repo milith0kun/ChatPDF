@@ -12,12 +12,10 @@ from app.models.chat import (
     ChatMessage,
     ChatResponse,
     ChatHistory,
-    MessageRole,
     TokenUsage
 )
 from app.db.redis_client import redis_manager
 from app.core.rag import RAGService
-from app.config import settings
 
 
 router = APIRouter()
@@ -32,7 +30,7 @@ async def send_message(request: ChatMessage):
     The system will:
     1. Search for relevant content in uploaded documents
     2. Build context from most relevant chunks
-    3. Generate a response using GPT-4
+    3. Generate a response using Claude (Anthropic)
     4. Include document references with page numbers
     
     If no relevant information is found, the system will
