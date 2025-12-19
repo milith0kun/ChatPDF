@@ -13,7 +13,7 @@ from app.config import settings
 from app.core.embeddings import embedding_service
 from app.db.qdrant_client import qdrant_manager
 from app.db.redis_client import redis_manager
-from app.llm.openai_client import openai_client
+from app.llm.anthropic_client import anthropic_client
 from app.llm.prompts import SYSTEM_PROMPT, build_context_prompt
 
 
@@ -76,7 +76,7 @@ class RAGService:
         context = self._build_context(retrieved_chunks)
         
         # Step 3: Generate response
-        response = await openai_client.generate_response(
+        response = await anthropic_client.generate_response(
             system_prompt=SYSTEM_PROMPT,
             context=context,
             query=query,
@@ -89,7 +89,14 @@ class RAGService:
         return {
             "answer": response["answer"],
             "references": references,
-            "confidence": response.get("confidence")
+            "confidence": response.get("confidence"),
+            "token_usage": {
+                "provider": response.get("provider", "anthropic"),
+                "model": response.get("model", settings.LLM_MODEL),
+                "input_tokens": response.get("input_tokens", 0),
+                "output_tokens": response.get("output_tokens", 0),
+                "total_tokens": response.get("total_tokens", 0)
+            }
         }
     
     async def generate_response_stream(
@@ -118,7 +125,7 @@ class RAGService:
         context = self._build_context(retrieved_chunks)
         
         # Stream response
-        async for chunk in openai_client.generate_response_stream(
+        async for chunk in anthropic_client.generate_response_stream(
             system_prompt=SYSTEM_PROMPT,
             context=context,
             query=query,

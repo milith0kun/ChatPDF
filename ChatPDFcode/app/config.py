@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     # ======================
     # Embedding Model
     # ======================
-    EMBEDDING_MODEL: str = "sentence-transformers/multilingual-e5-large"
-    EMBEDDING_DIMENSION: int = 1024
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_DIMENSION: int = 384
     
     # ======================
     # Chunking Settings
@@ -62,17 +62,17 @@ class Settings(BaseSettings):
     RRF_K: int = 60  # Reciprocal Rank Fusion constant
     
     # ======================
-    # LLM Settings
+    # LLM Settings - Using Claude for text
     # ======================
-    LLM_MODEL: str = "gpt-4-turbo-preview"
+    LLM_MODEL: str = "claude-3-haiku-20240307"  # Claude 3 Haiku (fast & cheap)
     LLM_MAX_TOKENS: int = 4096
     LLM_TEMPERATURE: float = 0.1
     LLM_CONTEXT_WINDOW: int = 100000  # Reserve tokens for context
     
     # ======================
-    # Vision Model
+    # Vision Model - Same model for vision
     # ======================
-    VISION_MODEL: str = "gpt-4-vision-preview"
+    VISION_MODEL: str = "gpt-4o-mini"  # Same model supports vision
     
     # ======================
     # CORS Settings

@@ -39,6 +39,15 @@ class ChatMessage(BaseModel):
         }
 
 
+class TokenUsage(BaseModel):
+    """Token usage statistics for an API call."""
+    provider: str = Field(..., description="API provider (anthropic/openai)")
+    model: str = Field(..., description="Model used")
+    input_tokens: int = Field(0, description="Input tokens used")
+    output_tokens: int = Field(0, description="Output tokens generated")
+    total_tokens: int = Field(0, description="Total tokens used")
+
+
 class ChatResponse(BaseModel):
     """Response model for chat messages."""
     session_id: str
@@ -54,6 +63,10 @@ class ChatResponse(BaseModel):
         description="Confidence score of the answer"
     )
     timestamp: str
+    token_usage: Optional[TokenUsage] = Field(
+        None,
+        description="Token usage statistics"
+    )
     
     class Config:
         json_schema_extra = {
@@ -70,7 +83,14 @@ class ChatResponse(BaseModel):
                     }
                 ],
                 "confidence": 0.95,
-                "timestamp": "2024-01-15T10:35:00Z"
+                "timestamp": "2024-01-15T10:35:00Z",
+                "token_usage": {
+                    "provider": "anthropic",
+                    "model": "claude-3-haiku",
+                    "input_tokens": 1500,
+                    "output_tokens": 300,
+                    "total_tokens": 1800
+                }
             }
         }
 

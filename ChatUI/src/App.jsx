@@ -11,13 +11,15 @@ import {
     Settings,
     Code,
     ChevronDown,
+    ChevronUp,
     X,
     Trash2,
     BookOpen,
     RotateCcw,
     Sparkles,
     AlertCircle,
-    Layers
+    Layers,
+    Zap
 } from 'lucide-react'
 import { apiService } from './services/api'
 
@@ -138,7 +140,8 @@ function App() {
             setMessages(prev => [...prev, {
                 role: 'assistant',
                 content: response.answer,
-                references: response.references
+                references: response.references,
+                tokenUsage: response.token_usage
             }])
         } catch (err) {
             setError('Error al obtener respuesta')
@@ -296,18 +299,35 @@ function App() {
                                         {msg.role === 'assistant' ? (
                                             <>
                                                 <ReactMarkdown>{msg.content}</ReactMarkdown>
-                                                {msg.references && msg.references.length > 0 && (
-                                                    <div className="references">
-                                                        <p className="references-title">Referencias</p>
-                                                        {msg.references.map((ref, i) => (
-                                                            <div key={i} className="reference-item">
-                                                                <BookOpen size={14} />
-                                                                <span>
-                                                                    {ref.document_name} — Pág. {ref.page_number}
-                                                                </span>
-                                                            </div>
-                                                        ))}
+
+                                                {/* Token usage - inline badge */}
+                                                {msg.tokenUsage && (
+                                                    <div className="token-usage">
+                                                        <Zap size={12} />
+                                                        <span>{msg.tokenUsage.provider}</span>
+                                                        <span className="token-count">{msg.tokenUsage.total_tokens} tokens</span>
                                                     </div>
+                                                )}
+
+                                                {/* Collapsible references */}
+                                                {msg.references && msg.references.length > 0 && (
+                                                    <details className="references-collapsible">
+                                                        <summary className="references-summary">
+                                                            <BookOpen size={14} />
+                                                            <span>Ver {msg.references.length} referencias</span>
+                                                            <ChevronDown size={14} className="chevron-icon" />
+                                                        </summary>
+                                                        <div className="references-content">
+                                                            {msg.references.map((ref, i) => (
+                                                                <div key={i} className="reference-item">
+                                                                    <FileText size={12} />
+                                                                    <span>
+                                                                        {ref.document_name} — Pág. {ref.page_number}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </details>
                                                 )}
                                             </>
                                         ) : (

@@ -12,7 +12,8 @@ from app.models.chat import (
     ChatMessage,
     ChatResponse,
     ChatHistory,
-    MessageRole
+    MessageRole,
+    TokenUsage
 )
 from app.db.redis_client import redis_manager
 from app.core.rag import RAGService
@@ -88,12 +89,18 @@ async def send_message(request: ChatMessage):
             }
         )
         
+        # Build token usage
+        token_usage = None
+        if response.get("token_usage"):
+            token_usage = TokenUsage(**response["token_usage"])
+        
         return ChatResponse(
             session_id=session_id,
             answer=response["answer"],
             references=response.get("references", []),
             confidence=response.get("confidence"),
-            timestamp=timestamp
+            timestamp=timestamp,
+            token_usage=token_usage
         )
         
     except Exception as e:

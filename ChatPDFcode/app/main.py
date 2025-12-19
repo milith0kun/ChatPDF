@@ -17,16 +17,29 @@ from app.db.qdrant_client import qdrant_manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle manager for startup and shutdown events."""
-    # Startup
-    await redis_manager.connect()
-    await qdrant_manager.connect()
+    # Startup - graceful connection (don't fail if services unavailable)
+    try:
+        await redis_manager.connect()
+        print("✅ Connected to Redis")
+    except Exception as e:
+        print(f"⚠️ Redis not available: {e}")
+    
+    try:
+        await qdrant_manager.connect()
+        print("✅ Connected to Qdrant")
+    except Exception as e:
+        print(f"⚠️ Qdrant not available: {e}")
+    
     print("🚀 ChatPDF API started successfully")
     
     yield
     
     # Shutdown
-    await redis_manager.disconnect()
-    await qdrant_manager.disconnect()
+    try:
+        await redis_manager.disconnect()
+        await qdrant_manager.disconnect()
+    except:
+        pass
     print("👋 ChatPDF API shutdown complete")
 
 

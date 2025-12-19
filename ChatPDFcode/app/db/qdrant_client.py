@@ -153,9 +153,10 @@ class QdrantManager:
                 )
             search_filter = Filter(must=conditions)
         
-        results = await self.client.search(
+        # Use query_points (new API) instead of search
+        results = await self.client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=top_k,
             query_filter=search_filter,
             with_payload=True
@@ -167,7 +168,7 @@ class QdrantManager:
                 "score": r.score,
                 "payload": r.payload
             }
-            for r in results
+            for r in results.points
         ]
     
     async def get_collection_info(self, collection_name: str) -> Dict[str, Any]:

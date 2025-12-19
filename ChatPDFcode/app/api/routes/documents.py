@@ -95,14 +95,20 @@ async def upload_documents(
     session_data["documents"].extend([d["document_id"] for d in uploaded_files])
     await redis_manager.set_session(session_id, session_data)
     
-    # Queue processing tasks for each document
+    # Queue processing tasks for each document using threading (simpler for dev)
+    import threading
+    from app.workers.tasks import process_document_sync
     for doc in uploaded_files:
-        process_document_task.delay(
-            job_id=job_id,
-            document_id=doc["document_id"],
-            file_path=doc["file_path"],
-            session_id=session_id
+        thread = threading.Thread(
+            target=process_document_sync,
+            kwargs={
+                "job_id": job_id,
+                "document_id": doc["document_id"],
+                "file_path": doc["file_path"],
+                "session_id": session_id
+            }
         )
+        thread.start()
     
     return DocumentUploadResponse(
         job_id=job_id,
