@@ -44,6 +44,7 @@ class ImageData:
     bbox: Tuple[float, float, float, float] = None
     caption: Optional[str] = None
     image_index: int = 0
+    description: Optional[str] = None  # AI-generated description
 
 
 @dataclass

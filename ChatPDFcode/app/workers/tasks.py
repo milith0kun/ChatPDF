@@ -162,6 +162,71 @@ def _update_document_status_sync(
     r.close()
 
 
+def _analyze_images_sync(images):
+    """
+    Analyze images using OpenAI GPT-4o-mini Vision.
+    Returns list of ImageData with descriptions filled.
+    """
+    import base64
+    from openai import OpenAI
+    from app.config import settings
+    from app.llm.prompts import VISION_ANALYSIS_PROMPT
+    from app.core.pdf_processor import ImageData
+    
+    if not settings.OPENAI_API_KEY:
+        print("    ⚠️ OpenAI API key not configured, skipping image analysis")
+        return images
+    
+    client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    analyzed_images = []
+    
+    for i, img in enumerate(images):
+        try:
+            # Convert bytes to base64
+            img_base64 = base64.b64encode(img.image_bytes).decode('utf-8')
+            
+            # Call GPT-4o-mini Vision
+            response = client.chat.completions.create(
+                model=settings.VISION_MODEL,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": VISION_ANALYSIS_PROMPT.format(context="")},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{img_base64}",
+                                    "detail": "low"  # Use low detail for cost efficiency
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=500
+            )
+            
+            description = response.choices[0].message.content
+            print(f"    ✅ Analyzed image {i+1}/{len(images)}")
+            
+            # Create new ImageData with description
+            analyzed_images.append(ImageData(
+                image_bytes=img.image_bytes,
+                page_number=img.page_number,
+                bbox=img.bbox,
+                caption=img.caption,
+                image_index=img.image_index,
+                description=description
+            ))
+            
+        except Exception as e:
+            print(f"    ❌ Error analyzing image {i+1}: {e}")
+            # Keep original image without description
+            analyzed_images.append(img)
+    
+    return analyzed_images
+
+
 def process_document_sync(
     job_id: str,
     document_id: str,
@@ -189,6 +254,13 @@ def process_document_sync(
         
         print(f"  ✅ Extracted: {len(processed_doc.text_blocks)} text blocks, "
               f"{len(processed_doc.tables)} tables, {len(processed_doc.images)} images")
+        
+        # Step 1.5: Analyze images with GPT-4o-mini (if any)
+        if processed_doc.images:
+            print(f"  🖼️ Analyzing {len(processed_doc.images)} images with GPT-4o-mini...")
+            analyzed_images = _analyze_images_sync(processed_doc.images)
+            processed_doc.images = analyzed_images
+            print(f"  ✅ Image analysis complete")
         
         # Step 2: Chunk the content
         chunks = semantic_chunker.chunk_document(processed_doc)

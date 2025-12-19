@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import tiktoken
 
 from app.config import settings
-from app.core.pdf_processor import ProcessedDocument, TextBlock, TableData
+from app.core.pdf_processor import ProcessedDocument, TextBlock, TableData, ImageData
 
 
 @dataclass
@@ -79,6 +79,17 @@ class SemanticChunker:
                 chunk_id=f"{document.document_id}_table_{i}"
             )
             chunks.append(table_chunk)
+        
+        # Process images with descriptions as chunks
+        for i, image in enumerate(document.images):
+            if image.description:  # Only if image was analyzed
+                image_chunk = self._create_image_chunk(
+                    image=image,
+                    document_id=document.document_id,
+                    document_name=document.filename,
+                    chunk_id=f"{document.document_id}_image_{i}"
+                )
+                chunks.append(image_chunk)
         
         return chunks
     
@@ -236,6 +247,35 @@ class SemanticChunker:
                     lines.append(" | ".join(row_desc))
         
         return "\n".join(lines)
+    
+    def _create_image_chunk(
+        self,
+        image: ImageData,
+        document_id: str,
+        document_name: str,
+        chunk_id: str
+    ) -> DocumentChunk:
+        """Create a chunk from an analyzed image."""
+        # Build content from AI-generated description
+        content = f"[Imagen en página {image.page_number}]\n"
+        if image.caption:
+            content += f"Título: {image.caption}\n"
+        content += f"Análisis de imagen:\n{image.description}"
+        
+        return DocumentChunk(
+            chunk_id=chunk_id,
+            content=content,
+            token_count=self.count_tokens(content),
+            metadata={
+                "document_id": document_id,
+                "document_name": document_name,
+                "page_numbers": [image.page_number],
+                "section_title": image.caption,
+                "chunk_type": "image",
+                "primary_page": image.page_number,
+                "image_index": image.image_index
+            }
+        )
 
 
 # Global instance
